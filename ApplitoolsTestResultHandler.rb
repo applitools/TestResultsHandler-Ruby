@@ -207,11 +207,7 @@ class ApplitoolsTestResultHandler
 
   def create_request(request_type, url)
     request = {}
-    current_date = Time.now.httpdate
-    headers = {
-        "Eyes-Expect" => "202+location",
-        "Eyes-Date" => current_date
-    }
+    headers = {}
     request["headers"] = headers
     request["url"] = url
     request["request_type"] = request_type
@@ -220,30 +216,24 @@ class ApplitoolsTestResultHandler
 
   def send_request(request, retry_val = 1, delay_before_retry = false)
     @counter += 1
-    request_id = @counter.to_s+"--"+SecureRandom.uuid.to_s
 
-    headers = request["headers"]
     request_type = request["request_type"]
     url = request["url"]
     url = url + "?apiKey=" + @view_key
 
-    headers["x-applitools-eyes-client-request-id"] = request_id
 
     begin
         if request_type == 'GET'
           response = Faraday.get(
               url,
-              headers: headers,
           )
         elsif request_type == 'POST'
             response = Faraday.post(
                 url,
-                headers: headers
             )
         elsif request_type == 'DELETE'
             response = Faraday.delete(
                 url,
-                headers: headers
             )
         else
           raise "Not a valid request type"
@@ -297,10 +287,10 @@ class ApplitoolsTestResultHandler
 
     response = send_request(request)
 
-    if response.status != 200
-        response
+    if response.status == 200
+        long_request_loop(request, delay)
     end
-    long_request_loop(request, delay)
+    response
   end
 
 
